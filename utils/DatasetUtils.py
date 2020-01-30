@@ -5,56 +5,27 @@ DatasetUtils.py
 comments
 """
 from connectors.TargetConnector import *
-from pyspark.sql.functions import concat_ws, collect_set, col, lower, when
-from pyspark.sql.window import Window
 from pyspark.sql.types import StringType, StructField, StructType
+from datetime import datetime
+import yaml
 
 
-def bookInfo(ds):
-    DS = ds
+def getYamlConfig(confPath):
+    with open(confPath) as file:
+        configYaml = yaml.load(file, Loader=yaml.FullLoader)
 
-    bookPath = "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/MasterData/Radar Data Dump.csv"
+    return configYaml
 
-    # reading master CSV, collecting multiple books as set and converting it into string in order to save in csv.
-    bookDS = createDatasetFromCSVFile(bookPath) \
-        .withColumn("BOOKS", concat_ws(",", collect_set(col("BOOK")).over(Window.partitionBy(col("TRIP"))))) \
-        .select("TRIP", "BOOKS").distinct()
+def getOriginDestination(dataSet):
+    return dataSet.withColumn("Origin", col("Origins").getField("country")) \
+        .withColumn("OriginCity", col("Origins").getField("city")) \
+        .withColumn("OriginState", col("Origins").getField("state")) \
+        .withColumn("Destination", col("Destinations").getField("country")) \
+        .withColumn("DestinationCity", col("Destinations").getField("city")) \
+        .withColumn("DestinationState", col("Destinations").getField("state"))
 
-    # joining invoice DS with masterBook DS to get the Book column
-    DS = DS.join(bookDS, col("_ShellTripID") == col("TRIP"), "left_outer").drop("TRIP", "BOOK")
-
-    return DS
-
-
-def billTypeInfo(ds):
-    DS = ds
-
-    billPath = "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/MasterData/BillType.csv"
-
-    # reading billType CSV
-    billDS = createDatasetFromCSVFile(billPath)
-
-    # joining invoice DS with billing DS to get the BillType column
-    DS = DS.join(billDS,
-                 (lower(DS._Name) == lower(billDS.VEDNOR_NAME)) &
-                 (lower(DS.TypeOfService) == lower(billDS.COST_LINE_ITEM_TYPE)),
-                 "left_outer") \
-        .drop("VEDNOR_NAME", "COST_LINE_ITEM_TYPE")
-
-    return DS
-
-
-def statusOfRec(ds):
-    DS = ds
-
-    DS = DS.withColumn("row_status", when(col("BOOKS").contains(",")
-                                          | col("Origin").rlike("~|/")
-                                          | col("Destination").rlike("~|/")
-                                          | col("DestinationCity").contains(".")
-                                          | col("OriginCity").contains(".")
-                                          , "Bad_Rec").otherwise("Good_Rec"))
-
-    return DS
+def currentDate():
+    return datetime.date.today()
 
 
 def get_custom_service_price(serv, price):
@@ -64,19 +35,43 @@ def get_custom_service_price(serv, price):
     else:
         if len(serv) == len(price):
             for i in range(0, len(serv)):
-                pair = pair + serv[i] + "<>" + str(price[i]) + ","
+                pair = pair + serv[i].strip() + "<>" + str(price[i]) + ","
         else:
             print("length doesn't match")
     return pair[:-1]
 
 
+# def get_kirby_country_city_state(place):
+#     country = city = state = ""
+#     arrPlace = place.split("/")
+#
+#     if arrPlace is None:
+#         ""
+#     else:
+#         if len(arrPlace) == 2:
+#             country = arrPlace[0]
+#             city = arrPlace[1][0:-3]
+#             state = arrPlace[1][-2:]
+#         elif len(arrPlace) == 3:
+#             country = arrPlace[0]
+#             city = arrPlace[1]
+#             state = arrPlace[2]
+#         else:
+#             country = place
+#
+#     return country, city, state
+
 def get_kirby_country_city_state(place):
     country = city = state = ""
-    arrPlace = place.split("/")
 
-    if arrPlace is None:
-        ""
-    else:
+    if place is not None:
+        if "," in place:
+            multiplePlace = place.split(",")[0]
+        else:
+            multiplePlace = place
+
+        arrPlace = multiplePlace.split("/")
+
         if len(arrPlace) == 2:
             country = arrPlace[0]
             city = arrPlace[1][0:-3]
@@ -94,8 +89,10 @@ def get_kirby_country_city_state(place):
 def get_blessey_country_city_state(placees):
     lis = lis1 = lis2 = ["", "", "", ""]
     place = placees
-    if place[-1] == ".":
-        place = place[:-1]
+
+    if place == None:
+        if place[-1] == ".":
+            place = place[:-1]
     if "/" in place:
         arr = place.split("/")  # Ergon~Marietta~ OH/Enlink~Bells Run~ OH
         arr0 = arr[0].split("~")

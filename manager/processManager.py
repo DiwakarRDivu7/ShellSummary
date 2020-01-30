@@ -2,37 +2,58 @@
 
 
 """
-from transform.TransformBlesseySummary import TransformBlesseySummary
-from transform.TransformKirbySummary import TransformKirbySummary
+from transform_old.TransformBlesseySummary import TransformBlesseySummary
+from transform_old.TransformKirbySummary import TransformKirbySummary
 from validation.DataValidator import compareDS
-from transform.mergeFile import mergeFiles
+from transform_old.mergeFile import mergeFiles
 
 
-def initiateSelectedProcess(process, vendor=""):
-    process = process.upper()
+class ProcessManager:
+    def initiateSelectedProcess(self, config, process, vendor="", id=''):
+        process = process.upper()
 
-    if process == "TRANSFORMATION":
-        ven = selectVendor(vendor)
-        if ven == "incorrect vendor":
-            raise("### specify the correct vendor in the 3rd argument, check the vendor name ###")
+        if process == "TRANSFORMATION":
+            if vendor == "":
+                raise ("### specify the vendor in the 3rd argument ###")
+            else:
+                vendorList = ProcessManager().getVendorsList(config, vendor)
+                for vend in vendorList:
+                    ven = ProcessManager().selectVendor(vend)
+                    if ven == "incorrect vendor":
+                        raise ("### specify the correct vendor in the 3rd argument, check the vendor name ###")
+                    else:
+                        print("### running " + vend + " vendor ###")
+                        ven.populateTable(config, id)
+                if id == "":
+                    mergeFiles(self)
+
+        elif process == "VALIDATION":
+            compareDS(self, config)
+
         else:
-            ven.populateTable()
-            # mergeFiles()
+            raise ("### incorrect process, Avaialbe process are 'Transformation' and 'Validation' ###")
 
-    elif process == "VALIDATION":
-        compareDS()
+        return None
 
-    else:
-        raise("### incorrect process, Avaialbe process are 'Transforamtion' and 'Validation' ###")
+    @staticmethod
+    def selectVendor(vendor):
+        vendor = vendor.upper()
+        switcher = {
+            "KIRBY": TransformKirbySummary(),
+            "BLESSEY": TransformBlesseySummary()
+        }
 
-    return None
+        return switcher.get(vendor, "incorrect vendor")
 
+    @staticmethod
+    def getVendorsList(config, vendor):
+        vendor = vendor.upper()
 
-def selectVendor(vendor):
-    vendor = vendor.upper()
-    switcher = {
-        "KIRBY": TransformKirbySummary(),
-        "BLESSEY": TransformBlesseySummary()
-    }
+        if vendor == "ALL":
+            vendorList = config['Vendor']['All']
+        elif "_" in vendor:  # vendor spliting by "_",  ex: kirby_blessey to ['Kirby',blessry']
+            vendorList = vendor.split("_")
+        else:  # string to array by spliting "###", ex: kirby to ['Kirby']
+            vendorList = vendor.split("###")
 
-    return switcher.get(vendor, "incorrect vendor")
+        return vendorList

@@ -5,23 +5,31 @@ ShippingLoader.py
 comments
 
 """
-from manager.processManager import initiateSelectedProcess
+import yaml
 import sys
-# from transform.TransformInvoiceSummary import populateTable
-# from transform.TransfromInvoice import populateTable
-
 from datetime import datetime
+from manager.processManager import ProcessManager
+
+
+class ShippingLoader:
+    configYaml = None
+
+    def setYamlConfig(self, confPath):
+        with open(confPath) as file:
+            self.configYaml = yaml.load(file, Loader=yaml.FullLoader)
+
+        return self.configYaml
+
+
+    def getConfig(self):
+        return self.configYaml
 
 
 def main():
     try:
         startTime = datetime.now().time().strftime('%H:%M:%S')
 
-        # populateTable()
-
-        confPath = ""
-        process = ""
-        vendor = ""
+        confPath = process = vendor = id = ""
 
         argLen = len(sys.argv)
 
@@ -37,9 +45,17 @@ def main():
             confPath = sys.argv[1]
             process = sys.argv[2]
             vendor = sys.argv[3]
+        elif argLen == 5:
+            confPath = sys.argv[1]
+            process = sys.argv[2]
+            vendor = sys.argv[3]
+            id = sys.argv[4]
+
+        # read yaml file
+        config = ShippingLoader().setYamlConfig(confPath)
 
         # start process manager based on the arguments received.
-        initiateSelectedProcess(process, vendor)
+        ProcessManager().initiateSelectedProcess(config, process, vendor, id)
 
         endTime = datetime.now().time().strftime('%H:%M:%S')
 

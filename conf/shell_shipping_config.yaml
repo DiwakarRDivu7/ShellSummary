@@ -1,0 +1,81 @@
+SparkSubmit:
+  master : 'local[*]'
+  appName : 'Shell-Shipping'
+  logLevel : "error"
+
+
+ExternalJars:
+  sparkXML: "/Users/diwr/Desktop/DDL/jars/spark-xml_2.11-0.5.0.jar"
+
+
+InvoicePath:
+  abbyXmlPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/TwoMonths/AllVendors"
+  servingTempPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/Output/SummaryInvoice_Vendor_temp"
+  servingPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/Output/summary_invoice"
+  oldServingPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/Output/summary_invoice_stg"
+  newServingName : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/Output/SummaryInvoice_VendorToday/InvoiceSummary.csv"
+
+ServingTable:
+  deltaTable : ""
+  stagingTable : ""
+  consumptionTable : ""
+
+LoggingTale:
+  logSummaryOfRun : ""
+  logDetailsOfRun : ""
+
+Validation:
+  sourcePath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/Compare_DataValidation/ManualDS.csv"
+  targetPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/Compare_DataValidation/ExtractDS.csv"
+  primaryKeyColumns : ["InvoiceID","TypeOfService"]
+  columnsToIgnore : ["row_status","TotalAmountDue","Book","status_reason"]
+  resultPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/Compare_DataValidation/ComparedResult"
+
+
+Master :
+  bookPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/MasterData/Radar Data Dump.csv"
+  billPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/MasterData/bill_type.csv"
+  ecapPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/MasterData/ecap_data.csv"
+
+
+Columns :
+  columnsRequired : ["_InvoiceNumber", "_InvoiceDate", "_ShellTripID", "_VendorTripID", "_Terms", "_BillTo",
+                     "_Name", "_Origins", "_Destinations", "_Total", "_LineItems"]
+
+  selectedColumns : ["row_status", "_InvoiceNumber", "_InvoiceDate", "_ShellTripID", "_VendorTripID", "_Total",
+          "_Terms", "_BillTo", "_Name", "Origin", "OriginCity", "OriginState",
+          "Destination", "DestinationCity", "DestinationState", "TypeOfService", "ServiceAmount", "BOOKS", "COST_TYPE", "ProcessingTime", "status_reason"]
+
+  summaryColumns : ["row_status", "InvoiceID", "InvoiceDate", "ShellTripID", "VendorTripID", "TotalAmountDue",
+            "Terms", "BillTo", "BillFrom", "Origin", "OriginCity", "OriginState",
+            "Destination", "DestinationCity", "DestinationState", "TypeOfService", "AmountDue", "Book", "BillType", "ProcessingTime", "status_reason"]
+
+
+Logging :
+  selectedColumns : ['RunID', 'Path', 'MasterURL', 'TotalInvoices', 'TotalInvoiceRecords', 'StartTime', 'EndTime', 'vendorList', 'vendorInitialCnt', 'vendorProcessedCnt']
+  summaryColumns : ['RunID', 'Path', 'MasterURL', 'TotalInvoices', 'TotalInvoiceRecords', 'StartTime', 'EndTime']
+  detailsColumns : ['RunID', 'Message']
+  loggingPath : "/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/Output/logging"
+
+
+test:
+  testNeed : 'no'
+  trail: 1
+  uri: 'hdfs://us-tsdp-dev' #"hdfs://somehost:8020"
+
+
+Ecap:
+  primaryKeyColumns: ['invoice_id']
+  ecapValidationResultPath : '/Users/diwr/Desktop/Shell/Shell Doc/ShellShipping/Output/ecap'
+
+  servingLayerColumns : ['InvoiceID', 'InvoiceDate', 'BillFrom','ShellTripID', 'TotalAmountDue', 'AmountDue']
+  constServingLayerColumns : ['invoice_id', 'invoice_date', 'vendor_name','shell_trip_id', 'total_amount', 't_lineitem_amount']
+  ecapColumns : ['INVOICE_NUMBER', 'INVOICE_DATE', 'VENDOR_LEGAL_NAME','TRIP_NUMBER', 'AMOUNT']
+  constEcapColumns : ['invoice_id', 'invoice_date_ecap', 'vendor_name_ecap','shell_trip_id_ecap', 'total_amount_ecap']
+
+  serving_InvoiceDate_Format : "MM/dd/yyyy" # format in serving
+  ecap_InvoiceDate_Format : "dd-MMM-yy" # format in ecap file
+
+  # pick from the constServingLayerColumns
+  columnsToIgnore : ['vendor_name'] #, 'shell_trip_id'
+

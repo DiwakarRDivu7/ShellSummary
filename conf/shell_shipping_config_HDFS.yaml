@@ -1,0 +1,86 @@
+SparkSubmit:
+  master : 'yarn'
+  appName : 'Shell-Shipping'
+  logLevel : 'error'
+
+
+ExternalJars:
+  sparkXML: "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/scripts/external_library/spark-xml_2.11-0.5.0.jar"
+
+
+InvoicePath:
+  abbyXmlPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/abbyy_output/16-12-2019"
+  servingTempPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/transformation_output/summary_invoice_temp"
+  servingPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/transformation_output/summary_invoice"
+  oldServingPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/transformation_output/summary_invoice_stg"
+  newServingName : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/transformation_output/summary_invoice/InvoiceSummary.csv"
+  parquetServingPath : "hdfs://us-tsdp-dev/d/data/governed/cns/us_domestic_freight_optimization/freight_invoice_summary"
+
+ServingTable:
+  deltaTable : ""
+  stagingTable : ""
+  consumptionTable : ""
+
+LoggingTale:
+  logSummaryOfRun : ""
+  logDetailsOfRun : ""
+
+Validation:
+  sourcePath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/validation_input/ManualDS.csv"
+  targetPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/transformation_output/summary_invoice"
+  primaryKeyColumns : ["InvoiceID","TypeOfService"]
+  columnsToIgnore : ["row_status","TotalAmountDue","Book","status_reason"]
+  resultPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/validation_output/compared_result"
+
+
+Master :
+  bookPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/reference/radar_data.csv"
+  billPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/reference/bill_type.csv"
+  ecapPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/reference/ecap_data.csv"
+
+
+Columns :
+  columnsRequired : ["_InvoiceNumber", "_InvoiceDate", "_ShellTripID", "_VendorTripID", "_Terms", "_BillTo",
+                     "_Name", "_Origins", "_Destinations", "_Total", "_LineItems"]
+
+  selectedColumns : ["row_status", "_InvoiceNumber", "_InvoiceDate", "_ShellTripID", "_VendorTripID", "_Total",
+          "_Terms", "_BillTo", "_Name", "Origin", "OriginCity", "OriginState",
+          "Destination", "DestinationCity", "DestinationState", "TypeOfService", "ServiceAmount", "BOOKS", "COST_TYPE", "ProcessingTime", "status_reason"]
+
+  summaryColumns : ["row_status", "InvoiceID", "InvoiceDate", "ShellTripID", "VendorTripID", "TotalAmountDue",
+            "Terms", "BillTo", "BillFrom", "Origin", "OriginCity", "OriginState",
+            "Destination", "DestinationCity", "DestinationState", "TypeOfService", "AmountDue", "Book", "BillType", "ProcessingTime", "status_reason"]
+
+
+Logging :
+  selectedColumns : ['RunID', 'Path', 'MasterURL', 'TotalInvoices', 'TotalInvoiceRecords', 'StartTime', 'EndTime', 'vendorList', 'vendorInitialCnt', 'vendorProcessedCnt']
+  summaryColumns : ['RunID', 'Path', 'MasterURL', 'TotalInvoices', 'TotalInvoiceRecords', 'StartTime', 'EndTime']
+  detailsColumns : ['RunID', 'Message']
+  loggingPath : "hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/transformation_output/logging"
+
+
+test :
+  testNeed: 'no'
+  trail: 1
+  uri: 'hdfs://us-tsdp-dev'
+
+
+Ecap:
+  primaryKeyColumns: ['invoice_id']
+  ecapValidationResultPath : 'hdfs://us-tsdp-dev/d/data/governed/raw/us_domestic_freight_optimization/shipping/data/validation_output/ecap_validation'
+  parquetEcapValidationResultPath : "hdfs://us-tsdp-dev/d/data/governed/cns/us_domestic_freight_optimization/freight_ecap_validation"
+
+  servingLayerColumns : ['InvoiceID', 'InvoiceDate', 'BillFrom','ShellTripID', 'TotalAmountDue', 'AmountDue']
+  constServingLayerColumns : ['invoice_id', 'invoice_date', 'vendor_name','shell_trip_id', 'total_amount', 't_lineitem_amount']
+  ecapColumns : ['INVOICE_NUMBER', 'INVOICE_DATE', 'VENDOR_LEGAL_NAME','TRIP_NUMBER', 'AMOUNT']
+  constEcapColumns : ['invoice_id', 'invoice_date_ecap', 'vendor_name_ecap','shell_trip_id_ecap', 'total_amount_ecap']
+
+  serving_InvoiceDate_Format : "MM/dd/yyyy" # format in serving
+  ecap_InvoiceDate_Format : "dd-MMM-yy" # format in ecap file
+
+  # pick from the constServingLayerColumns
+  columnsToIgnore : ['vendor_name'] #, 'shell_trip_id'
+
+  # date range to generate report, format = MM-dd-yyyy or mention '' if no need of date range
+  fromDate: '1-1-2019'
+  toDate: '2-30-2019'
